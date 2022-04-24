@@ -1,1 +1,1 @@
-# dm-service
+# news-service
