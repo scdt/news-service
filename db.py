@@ -8,23 +8,42 @@ def hash_password(password: str, salt: bytes):
     hashed = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100_000)
     return hashed.hex()
 
+
 async def get_user(username: str):
-	with open("db.json", "r") as file:
-		db = json.load(file)
-		return db["users"].get(username)
+    with open("db.json", "r") as file:
+        db = json.load(file)
+        return db["users"].get(username)
+
 
 async def validate_password(username: str, password: str):
-	with open("db.json", "r") as file:
-		db = json.load(file)
-		hashed_password = hash_password(password, bytes.fromhex(db["users"][username]["salt"]))
-		return hashed_password.hex() == db["users"][username]["password"]
+    with open("db.json", "r") as file:
+        db = json.load(file)
+        hashed_password = hash_password(password, bytes.fromhex(db["users"][username]["salt"]))
+        return hashed_password == db["users"][username]["password"]
+
 
 async def create_user(username: str, password: str, role="user"):
-	with open("db.json", "r+") as file:
-		db = json.load(file)
-		random_bytes = os.urandom(16)
-		hashed_password = hash_password(password, random_bytes)
-		db["users"][username] = {"password": hashed_password, "salt": random_bytes.hex(), "role": role}
-		file.seek(0)
-		json.dump(db, file, indent=4)
-		file.truncate()
+    with open("db.json", "r+") as file:
+        db = json.load(file)
+        random_bytes = os.urandom(16)
+        hashed_password = hash_password(password, random_bytes)
+        db["users"][username] = {"password": hashed_password, "salt": random_bytes.hex(), "role": role}
+        file.seek(0)
+        json.dump(db, file, indent=4)
+        file.truncate()
+
+
+async def create_news(title: str, text: str):
+    with open("db.json", "r+") as file:
+        db = json.load(file)
+        random_id = uuid4()
+        db["news"][str(random_id)] = {"title": title, "text": text}
+        file.seek(0)
+        json.dump(db, file, indent=4)
+        file.truncate()
+
+
+async def get_news(news_id: str):
+    with open("db.json", "r") as file:
+        db = json.load(file)
+        return db["news"].get(news_id)

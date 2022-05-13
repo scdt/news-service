@@ -6,6 +6,7 @@ click==8.1.2
 dnspython==2.2.1
 email-validator==1.2.0
 fastapi==0.75.2
+greenlet==1.1.2
 h11==0.13.0
 httptools==0.4.0
 idna==3.3
@@ -20,6 +21,7 @@ PyYAML==6.0
 requests==2.27.1
 six==1.16.0
 sniffio==1.2.0
+SQLAlchemy==1.4.36
 starlette==0.17.1
 typing-extensions==4.2.0
 ujson==5.2.0
