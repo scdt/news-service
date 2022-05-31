@@ -1,7 +1,7 @@
-import React, {useState, useContext} from "react";
+import React, { useState, useContext } from "react";
 import { UserContext } from "../context/UserContext";
 import ErrorMessage from "./ErrorMessage";
-const UploadImage = ({updateImagesHandle}) => {
+const UploadImage = ({ updateImagesHandle }) => {
     const [token] = useContext(UserContext);
     const [selectedImage, setSelectedImage] = useState(null);
     const [errorMsg, setErrorMsg] = useState("");
@@ -18,7 +18,7 @@ const UploadImage = ({updateImagesHandle}) => {
             selectedImage,
             selectedImage.name
         );
-    
+
 
         const requestOption = {
             method: "POST",
@@ -45,9 +45,9 @@ const UploadImage = ({updateImagesHandle}) => {
             <div className="column">
                 <div className="file is-info">
                     <label className="file-label">
-                        <input 
+                        <input
                             className="file-input"
-                            type="file" 
+                            type="file"
                             placeholder="Выбрать файл"
                             name="image"
                             accept=".jpg"
@@ -71,7 +71,7 @@ const UploadImage = ({updateImagesHandle}) => {
             <div className="column is-11">
                 <button className="button is-primary is-1" onClick={uploadImage}>Загрузить</button>
             </div>
-            <ErrorMessage message={errorMsg}/>
+            <ErrorMessage message={errorMsg} />
         </div>
     )
 }

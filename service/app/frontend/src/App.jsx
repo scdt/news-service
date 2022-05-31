@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useContext} from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Header from "./components/Header";
 import Menu from "./components/SidebarMenu";
 import { UserContext } from "./context/UserContext";
@@ -6,7 +6,7 @@ import { UserContext } from "./context/UserContext";
 const App = () => {
 
   const [message, setMessage] = useState("");
-  const [token] = useContext(UserContext); 
+  const [token] = useContext(UserContext);
 
   const getWelcomeMessage = async () => {
     const requestOption = {
@@ -17,7 +17,7 @@ const App = () => {
     };
     const response = await fetch("/api", requestOption);
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.log("someone brocked");
     } else {
@@ -26,25 +26,25 @@ const App = () => {
   };
 
   useEffect(() => {
-   getWelcomeMessage();
+    getWelcomeMessage();
   }, []);
 
   return (
     <>
-   <Header title={message} />
+      <Header title={message} />
 
       <div className="columns m-5 ">
         {!token ? (
-            <div className="column">
-              <p>Вы не имеете право на просмотр</p>
-            </div>
-          ) : (
-            <>
-              <Menu />
-            </>
-          )}
+          <div className="column">
+            <p>Вы не имеете право на просмотр</p>
+          </div>
+        ) : (
+          <>
+            <Menu />
+          </>
+        )}
       </div>
-   </>
+    </>
   );
 }
 

@@ -3,6 +3,7 @@ import sqlalchemy.orm as orm
 import passlib.hash as hash
 import database as db
 
+
 class User(db.Base):
     __tablename__ = 'users'
 
@@ -16,16 +17,19 @@ class User(db.Base):
     def verify_password(self, password: str):
         return hash.bcrypt.verify(password, self.password_hash)
 
+
 class Post(db.Base):
     __tablename__ = 'posts'
 
     id = sql.Column(sql.Integer, primary_key=True, index=True)
-    owner_username = sql.Column(sql.String(50), sql.ForeignKey("users.username"))
+    owner_username = sql.Column(sql.String(
+        50), sql.ForeignKey("users.username"))
     private = sql.Column(sql.Boolean, default=False)
     title = sql.Column(sql.String(100), nullable=False)
     content = sql.Column(sql.String(10000), nullable=False)
 
     user = orm.relationship("User", back_populates="posts")
+
 
 class Image(db.Base):
     __tablename__ = 'images'

@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import Posts from "./Posts";
 import MyPosts from "./MyPosts";
 import Images from "./Images";
@@ -8,7 +8,6 @@ const Menu = () => {
 
     return (
         <>
-
             <div className="column is-1">
                 <ul className="menu-list">
                     <li>
@@ -22,7 +21,7 @@ const Menu = () => {
                         </a>
                     </li>
                     <li>
-                        <a href onClick={() => setPage(2)}> 
+                        <a href onClick={() => setPage(2)}>
                             Мои посты
                         </a>
                     </li>
@@ -37,13 +36,13 @@ const Menu = () => {
 
                 {numPage === 1 && (
                     <Images />
-                    
+
                 )}
 
                 {numPage === 2 && (
                     <MyPosts />
                 )}
-            </div> 
+            </div>
         </>
     );
 };

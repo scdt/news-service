@@ -15,10 +15,10 @@ export const UserProvider = (props) => {
                 }
             };
             const response = await fetch("/api/users/me", requestOption);
-            
+
             if (!response.ok) {
                 setToken(null);
-            } 
+            }
             localStorage.setItem("token", token);
 
         };
@@ -28,8 +28,8 @@ export const UserProvider = (props) => {
     }, [token]);
 
     return (
-        <UserContext.Provider value = {[token, setToken]}>
+        <UserContext.Provider value={[token, setToken]}>
             {props.children}
-        </UserContext.Provider>    
+        </UserContext.Provider>
     )
 };

@@ -1,6 +1,6 @@
 import React from "react";
 
-const ErrorMessage = ({message}) => (
+const ErrorMessage = ({ message }) => (
     <p className="error has-text-danger-dark">{message}</p>
 );
 

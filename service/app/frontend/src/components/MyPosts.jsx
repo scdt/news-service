@@ -1,4 +1,4 @@
-import React, {useContext, useState, useEffect} from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { UserContext } from "../context/UserContext";
 import ErrorMessage from "./ErrorMessage";
 
@@ -15,16 +15,16 @@ const MyPosts = () => {
                 Authorization: "Bearer " + token
             }
         }
-        
+
         const response = await fetch(`/api/posts/${post_id}`, requestOption);
 
         if (!response.ok) {
             setErrorMsg("Что-то пошло не так при удалении поста");
-        } else{
+        } else {
             getMyPosts();
         }
     };
-    
+
     const getMyPosts = async () => {
         const requestOption = {
             method: "GET",
@@ -33,7 +33,7 @@ const MyPosts = () => {
                 Authorization: "Bearer " + token
             }
         }
-        
+
         const response = await fetch("/api/posts/my", requestOption);
 
         if (!response.ok) {
@@ -50,34 +50,34 @@ const MyPosts = () => {
 
     return (
         <>
-            <ErrorMessage message={errorMsg}/>
+            <ErrorMessage message={errorMsg} />
 
             {posts ? (
                 <p>
                     {
-                    posts.map((post) => (
-                        <article className="media">
-                            <div className="media-content">
-                                <div className="content">
-                                    <p>
-                                    <strong>{post.title} </strong> 
-                                    <button 
-                                        className="button is-small is-danger is-light" 
-                                        onClick={() => handleDelete(post.id)}>
-                                        удалить
-                                    </button>
-                                    <br />
-                                    {post.content}
-                                    </p>
+                        posts.map((post) => (
+                            <article className="media">
+                                <div className="media-content">
+                                    <div className="content">
+                                        <p>
+                                            <strong>{post.title} </strong>
+                                            <button
+                                                className="button is-small is-danger is-light"
+                                                onClick={() => handleDelete(post.id)}>
+                                                удалить
+                                            </button>
+                                            <br />
+                                            {post.content}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        </article>
-                    ))}
+                            </article>
+                        ))}
 
                 </p>
             ) : (
                 <>
-                <button class="button is-loading">Loading</button>
+                    <button class="button is-loading">Loading</button>
                 </>
             )}
         </>

@@ -1,10 +1,10 @@
-import React, {useContext} from "react";
+import React, { useContext } from "react";
 
 import { UserContext } from "../context/UserContext";
 import Login from "./Login";
 import Register from "./Register";
 
-const Header = ({title}) => {
+const Header = ({ title }) => {
     const [token, setToken] = useContext(UserContext);
 
     const handleLogout = () => {
@@ -25,19 +25,18 @@ const Header = ({title}) => {
                     <div className="navbar-item">
                         <div className="buttons">
 
-                        {token ? 
-                            <>
-                            <button className="button is-danger" onClick={handleLogout}>
-                                Выйти
-                            </button>
-        
-                            </>
-                            : 
-                            <>
-                                <Register/>
-                                <Login/>
-                            </>
-                        }
+                            {token ?
+                                <>
+                                    <button className="button is-danger" onClick={handleLogout}>
+                                        Выйти
+                                    </button>
+                                </>
+                                :
+                                <>
+                                    <Register />
+                                    <Login />
+                                </>
+                            }
                         </div>
                     </div>
                 </div>
