@@ -1,4 +1,6 @@
 нужен npm и python
+## Создать бд
+Вызвать функцию в service/app/backend/services.py: create_database()
 ## Backend
 ```shell
 cd service/app/backend
