@@ -3,8 +3,8 @@
 Вызвать функцию в service/app/backend/services.py: create_database()
 ## Backend
 ```shell
-cd service/app/backend
 pip install -r requirements.txt
+cd service/app/backend
 uvicorn app.main:app
 ```
 ## Frontend
