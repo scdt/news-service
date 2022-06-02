@@ -38,3 +38,14 @@ class Image(db.Base):
     owner_id = sql.Column(sql.Integer, sql.ForeignKey("users.id"))
     name = sql.Column(sql.String(100), unique=True)
     url = sql.Column(sql.String(100), unique=True)
+
+
+class Report(db.Base):
+    __tablename__ = 'reports'
+
+    id = sql.Column(sql.Integer, primary_key=True, index=True)
+    username = sql.Column(sql.String(50), unique=False, nullable=False)
+
+
+if __name__ == "__main__":
+    db.Base.metadata.create_all(bind=db.engine)

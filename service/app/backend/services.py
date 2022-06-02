@@ -10,6 +10,7 @@ from uuid import uuid4
 import aiofiles
 from exif import Image
 from fastapi.responses import FileResponse
+from typing import Union
 
 oauth2schema = security.OAuth2PasswordBearer(tokenUrl="/api/token")
 JWT_SECRET = "MYJWT@#$@#$@#dfsdfs"
@@ -110,31 +111,37 @@ async def get_my_posts(
     return list(map(schemas.Post.from_orm, posts))
 
 
-async def _post_selector(post_id: int, user: schemas.User, db: orm.Session):
-    post = (
-        db.query(models.Post)
-        .filter_by(owner_username=user.username)
-        .filter(models.Post.id == post_id)
-        .first()
-    )
+async def get_post(post_id: int, user: schemas.User, db: orm.Session):
+    post = db.query(models.Post).get(post_id)
+
+    if post.user.username == user.username or not post.private:
+        return schemas.Post.from_orm(post)
+    else:
+        raise fastapi.HTTPException(
+            status_code=401, detail="Unauthorized")
+
+
+async def delete_post(post_id: int, user: schemas.User, db: orm.Session):
+    post = db.query(models.Post).get(post_id)
+
+    if post.user.username == user.username:
+        db.delete(post)
+        db.commit()
+    else:
+        raise fastapi.HTTPException(
+            status_code=401, detail="Unauthorized")
+
+
+async def report_post(post_id: int, db: orm.Session):
+    post = db.query(models.Post).get(post_id)
 
     if post is None:
         raise fastapi.HTTPException(
             status_code=404, detail="Post does not exist")
-
-    return post
-
-
-async def get_post(post_id: int, user: schemas.User, db: orm.Session):
-    post = await _post_selector(post_id=post_id, user=user, db=db)
-    return schemas.Post.from_orm(post)
-
-
-async def delete_post(post_id: int, user: schemas.User, db: orm.Session):
-    post = await _post_selector(post_id, user, db)
-
-    db.delete(post)
+    report = models.Report(username=post.user.username)
+    db.add(report)
     db.commit()
+    db.refresh(report)
 
 
 async def upload_image(

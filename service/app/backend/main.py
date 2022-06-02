@@ -100,6 +100,17 @@ async def delete_post(
     return {"message": "Sucessfully deleted"}
 
 
+@app.get("/api/posts/{post_id}/report", status_code=200)
+async def report_post(
+    post_id: int,
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    await services.report_post(post_id, db)
+
+    return {"message": "Sucessfully reported"}
+
+
 @app.post("/api/images/", response_model=schemas.Image)
 async def upload_image(
     file: fastapi.UploadFile,
