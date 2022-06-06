@@ -18,7 +18,7 @@ const UploadImage = ({ updateImagesHandle }) => {
             selectedImage,
             selectedImage.name
         );
-
+        console.log(formData);
 
         const requestOption = {
             method: "POST",
