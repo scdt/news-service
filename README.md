@@ -1,6 +1,6 @@
 нужен npm и python
 ## Создать бд
-Вызвать функцию в service/app/backend/services.py: create_database()
+python service/app/backend/models.py
 ## Backend
 ```shell
 pip install -r requirements.txt
