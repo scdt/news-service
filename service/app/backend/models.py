@@ -45,6 +45,7 @@ class Report(db.Base):
 
     id = sql.Column(sql.Integer, primary_key=True, index=True)
     username = sql.Column(sql.String(50), unique=False, nullable=False)
+    post_id = sql.Column(sql.Integer, unique=False, nullable=False)
 
 
 if __name__ == "__main__":

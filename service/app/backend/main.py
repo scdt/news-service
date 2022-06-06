@@ -27,12 +27,12 @@ async def create_user(
     user: schemas.UserCreate,
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    db_user = await services.get_user_by_username(user.username, db)
+    db_user = await services.get_user_by_username(db, user.username)
     if db_user:
         raise fastapi.HTTPException(
             status_code=400, detail="User already exist")
 
-    user = await services.create_user(user, db)
+    user = await services.create_user(db, user)
 
     return await services.create_token(user)
 
@@ -42,7 +42,7 @@ async def generate_token(
     form_data: security.OAuth2PasswordRequestForm = fastapi.Depends(),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    user = await services.authenticate_user(form_data.username, form_data.password, db)
+    user = await services.authenticate_user(db, form_data.username, form_data.password)
 
     if not user:
         raise fastapi.HTTPException(
@@ -61,7 +61,7 @@ async def create_post(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    return await services.create_post(post=post, user=user, db=db)
+    return await services.create_post(db=db, post=post, user=user)
 
 
 @app.get("/api/posts", response_model=List[schemas.Post])
@@ -77,7 +77,16 @@ async def get_my_posts(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    return await services.get_my_posts(user=user, db=db)
+    return await services.get_my_posts(db=db, user=user)
+
+
+@app.post("/api/posts/adv", response_model=List[schemas.Post])
+async def get_user_posts(
+    adv_msg: schemas.AdvisoryMessage,
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.get_posts(db=db, adv_msg=adv_msg)
 
 
 @app.get("/api/posts/{post_id}", status_code=200)
@@ -86,7 +95,7 @@ async def get_post(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    return await services.get_post(post_id, user, db)
+    return await services.get_post(db, post_id, user)
 
 
 @app.delete("/api/posts/{post_id}", status_code=204)
@@ -95,7 +104,7 @@ async def delete_post(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    await services.delete_post(post_id, user, db)
+    await services.delete_post(db, post_id, user)
 
     return {"message": "Sucessfully deleted"}
 
@@ -106,9 +115,17 @@ async def report_post(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    await services.report_post(post_id, db)
+    await services.report_post(db, post_id)
 
     return {"message": "Sucessfully reported"}
+
+
+@app.get("/api/reports/", response_model=List[schemas.Report])
+async def get_reports(
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.get_reports(db, user)
 
 
 @app.post("/api/images/", response_model=schemas.Image)
@@ -119,9 +136,9 @@ async def upload_image(
 ):
     print(1)
     return await services.upload_image(
+        db=db,
         input_file=file,
-        user=user,
-        db=db
+        user=user
     )
 
 
@@ -138,7 +155,7 @@ async def get_image(
     image_name: str,
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    return await services.get_image(name=image_name, db=db)
+    return await services.get_image(db=db, name=image_name)
 
 
 @app.get("/api")

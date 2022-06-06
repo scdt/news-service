@@ -41,3 +41,18 @@ class Image(pydantic.BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class Report(pydantic.BaseModel):
+    id: int
+    username: str
+    post_id: int
+
+    class Config:
+        orm_mode = True
+
+
+class AdvisoryMessage(pydantic.BaseModel):
+    id: int
+    username: str
+    signature: str

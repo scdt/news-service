@@ -10,10 +10,14 @@ from uuid import uuid4
 import aiofiles
 from exif import Image
 from fastapi.responses import FileResponse
-from typing import Union
+from ecdsa import VerifyingKey
+from ecdsa.keys import BadSignatureError
+
 
 oauth2schema = security.OAuth2PasswordBearer(tokenUrl="/api/token")
 JWT_SECRET = "MYJWT@#$@#$@#dfsdfs"
+advisory = 'advisory'
+advisory_pk = VerifyingKey.from_string(b'\xd3|ei\x9b3\xf0\xf5\x84\xdf\x0c\xfc\x8a\xa0\xa1=\xc9\x18\xea\xf2\xee\x8a\x1e\x07\xdd\xb3\xb8,\xb2\x90\xa9(\xc7\tO\x8d\xbeAB\xd2\x1fW\xf0\xab\xa0-\xf0/')
 
 
 def create_database():
@@ -28,11 +32,11 @@ def get_db():
         db.close()
 
 
-async def get_user_by_username(username: str, db: orm.Session()):
+async def get_user_by_username(db: orm.Session(), username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
 
-async def create_user(user: schemas.UserCreate, db: orm.Session()):
+async def create_user(db: orm.Session(), user: schemas.UserCreate):
     user_obj = models.User(
         username=user.username,
         realname=user.realname,
@@ -44,9 +48,9 @@ async def create_user(user: schemas.UserCreate, db: orm.Session()):
     return user_obj
 
 
-async def authenticate_user(username: str, password: str, db: orm.Session):
+async def authenticate_user(db: orm.Session, username: str, password: str):
 
-    user = await get_user_by_username(username, db)
+    user = await get_user_by_username(db, username)
 
     if (not user) or (not user.verify_password(password)):
         return False
@@ -71,18 +75,15 @@ async def get_current_user(
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user = db.query(models.User).get(payload["id"])
     except:
-        raise fastapi.HTTPException(
-            status_code=401,
-            detail="Invalid JWT token"
-        )
+        raise fastapi.HTTPException(status_code=401, detail="Invalid JWT token")
 
     return schemas.User.from_orm(user)
 
 
 async def create_post(
+    db: orm.Session,
     post: schemas.PostCreate,
-    user: schemas.User,
-    db: orm.Session
+    user: schemas.User
 ):
     post = models.Post(**post.dict(), owner_username=user.username)
     db.add(post)
@@ -93,17 +94,25 @@ async def create_post(
 
 
 async def get_posts(
-    db: orm.Session
+    db: orm.Session,
+    adv_msg: schemas.AdvisoryMessage = None
 ):
-    posts = db.query(models.Post).filter_by(
-        private=False).order_by(models.Post.id.desc()).limit(20)
+    if adv_msg is None:
+        posts = db.query(models.Post).filter_by(private=False).order_by(models.Post.id.desc()).limit(20)
+    else:
+        signature = bytearray.fromhex(adv_msg.signature)
+        try:
+            advisory_pk.verify(signature, str.encode(adv_msg.username))
+            posts = db.query(models.Post).filter(models.Post.owner_username == adv_msg.username)
+        except BadSignatureError:
+            raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
 
     return list(map(schemas.Post.from_orm, posts))
 
 
 async def get_my_posts(
-    user: schemas.User,
-    db: orm.Session
+    db: orm.Session,
+    user: schemas.User
 ):
     posts = db.query(models.Post).filter_by(
         owner_username=user.username).order_by(models.Post.id.desc())
@@ -111,43 +120,69 @@ async def get_my_posts(
     return list(map(schemas.Post.from_orm, posts))
 
 
-async def get_post(post_id: int, user: schemas.User, db: orm.Session):
+async def get_post(
+    db: orm.Session,
+    post_id: int,
+    user: schemas.User,
+):
     post = db.query(models.Post).get(post_id)
+
+    if post is None:
+        raise fastapi.HTTPException(status_code=404, detail="Post does not exist")
 
     if post.user.username == user.username or not post.private:
         return schemas.Post.from_orm(post)
     else:
-        raise fastapi.HTTPException(
-            status_code=401, detail="Unauthorized")
+        raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
 
 
-async def delete_post(post_id: int, user: schemas.User, db: orm.Session):
+async def delete_post(
+    db: orm.Session,
+    post_id: int,
+    user: schemas.User
+):
     post = db.query(models.Post).get(post_id)
+
+    if post is None:
+        raise fastapi.HTTPException(status_code=404, detail="Post does not exist")
 
     if post.user.username == user.username:
         db.delete(post)
         db.commit()
     else:
-        raise fastapi.HTTPException(
-            status_code=401, detail="Unauthorized")
+        raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
 
 
-async def report_post(post_id: int, db: orm.Session):
+async def report_post(
+    db: orm.Session,
+    post_id: int
+):
     post = db.query(models.Post).get(post_id)
 
     if post is None:
-        raise fastapi.HTTPException(
-            status_code=404, detail="Post does not exist")
-    report = models.Report(username=post.user.username)
+        raise fastapi.HTTPException(status_code=404, detail="Post does not exist")
+
+    report = models.Report(username=post.user.username, post_id=post.id)
     db.add(report)
     db.commit()
     db.refresh(report)
 
 
+async def get_reports(
+    db: orm.Session,
+    user: schemas.User
+):
+    if user.username == advisory:
+        reports = db.query(models.Report).all()
+        return list(map(schemas.Report.from_orm, reports))
+    else:
+        raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
+
+
 async def upload_image(
+    db: orm.Session,
     input_file: fastapi.UploadFile,
-    user: schemas.User,
-    db: orm.Session
+    user: schemas.User
 ):
 
     print(user.realname)
@@ -186,7 +221,10 @@ async def upload_image(
     return schemas.Image.from_orm(image)
 
 
-async def get_image(name: str, db: orm.Session):
+async def get_image(
+    db: orm.Session,
+    name: str
+):
     image = (
         db.query(models.Image)
         .filter_by(name=name)
