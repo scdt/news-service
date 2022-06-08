@@ -9,14 +9,19 @@ from fakesession import FakeSession
 import json
 import string
 from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 from jsonresponse import JsonResp
 from PIL import Image, ImageDraw, ImageFont
 from exif import Image as ExifImg
+from ecdsa import SigningKey, VerifyingKey
+
 random = random.SystemRandom()
 """ <config> """
 # SERVICE INFO
 PORT = 8000
 
+advisory_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkdmlzb3J5IiwicmVhbG5hbWUiOiJhZHZpc29yeSIsImlkIjoxfQ.9g5FzrbUaewzDmOtBKJkDVwyE9jemUucjjHLUJ4iITg"
+advisory_pk = SigningKey.from_string(b'\xb5\x1bp\x02i4\xcaz\xa7e\x10\xcd\x9c1x\x8c<\x88\x89v\xeb\xeb\xce\x8c')
 # DEBUG -- logs to stderr, TRACE -- verbose log
 DEBUG = os.getenv("DEBUG", True)
 """ </config> """
@@ -95,13 +100,20 @@ def check(host: str):
 
     s.headers = {"Authorization": f"Bearer {token}"}
 
-    _check_posts(s)
+    _log("Check posts")
+    post_id = _check_posts(s)
+
+    _log("Check images")
     _check_images(s, username)
+
+    _log("Check reports")
+    _check_reports(s, post_id)
 
     die(ExitStatus.OK, "Check ALL OK")
 
 
 def put(host: str, flag_id: str, flag: str, vuln: str):
+    _log("Putting flag")
 
     s = FakeSession(host, PORT)
     username = rand_string()
@@ -114,9 +126,13 @@ def put(host: str, flag_id: str, flag: str, vuln: str):
         s.headers = {"Authorization": f"Bearer {token}"}
 
         title = random.choice(TITLES)
-        r = _create_post(s, title, flag, True)
+        c = random.choice(FISHTEXT)
+        r = _create_post(s, title, c, False)
         post_id = r["id"]
-        print(f"{token}@@{post_id}", file=sys.stdout, flush=True)
+        title = random.choice(TITLES)
+        r = _create_post(s, title, flag, True)
+        private_post_id = r["id"]
+        print(f"{token}@@{post_id}@@{private_post_id}", file=sys.stdout, flush=True)
 
     elif vuln == "2":
         img = random.choice(IMAGES)
@@ -134,18 +150,29 @@ def put(host: str, flag_id: str, flag: str, vuln: str):
 
 
 def get(host: str, flag_id: str, flag: str, vuln: str):
+    _log("Getting flag")
+
     s = FakeSession(host, PORT)
 
     if vuln == "1":
         data = flag_id.split("@@")
         token = data[0]
         post_id = data[1]
+        private_post_id = data[2]
 
         s.headers = {"Authorization": f"Bearer {token}"}
         _log("Check flag in private post")
-        post = _get_post(s, post_id)
+        post = _get_post(s, private_post_id)
         if flag not in post:
             die(ExitStatus.CORRUPT, f"Can't find a flag in {post}")
+
+        _log("Check flag in private post by advisory")
+        s.headers = {"Authorization": f"Bearer {advisory_token}"}
+        report = _report_post(s, post_id)
+        signature = advisory_pk.sign(str.encode(report["username"])).hex()
+        posts = _get_user_posts(s, report["id"], report["username"], signature)
+        if flag not in posts:
+            die(ExitStatus.CORRUPT, f"Can't find a flag in {posts}")
 
     elif vuln == "2":
         _log("Check flag in /api/users/me")
@@ -177,7 +204,7 @@ def _check_posts(s):
     if c not in _get_posts(s):
         die(ExitStatus.MUMBLE, "failed to check public post")
 
-    return True
+    return id_pub
 
 # https://stackoverflow.com/a/46220683/9263761
 
@@ -201,6 +228,25 @@ def _check_images(s, username):
     return True
 
 
+def _check_reports(s, post_id):
+    s.headers = {"Authorization": f"Bearer {advisory_token}"}
+    _log("Check report post")
+    _report_post(s, post_id)
+    _log("Check get reports")
+    reports = _get_reports(s)
+    _log("Check get user's posts")
+    try:
+        for report in reports:
+            validate(instance=report, schema=JSONResp.report)
+            signature = advisory_pk.sign(str.encode(report['username'])).hex()
+            _get_user_posts(s, report["id"], report["username"], signature)
+    except ValidationError:
+        die(ExitStatus.MUMBLE, "Failed to check reports: Incorrect report format")
+    except Exception as e:
+        die(ExitStatus.MUMBLE, f"Failed to report post: {e}")
+    return True
+
+
 def _create_image(img, text):
     image = Image.open(img)
     draw = ImageDraw.Draw(image)
@@ -210,11 +256,11 @@ def _create_image(img, text):
 
     font = ImageFont.truetype(FONT, font_size, encoding='UTF-8')
 
-    while font.getsize(text)[0] < img_fraction*image.size[0]:
+    while font.getsize(text)[0] < img_fraction * image.size[0]:
         font_size += 1
         font = ImageFont.truetype(FONT, font_size)
 
-    font_size = round((font_size - 1)*1.8)
+    font_size = round((font_size - 1) * 1.8)
     font = ImageFont.truetype(FONT, font_size, encoding='UTF-8')
     w, h = font.getsize(text)
 
@@ -297,10 +343,44 @@ def _get_post(s, post_id):
         die(ExitStatus.MUMBLE,
             f"Unexpected /api/posts/{post_id} status code: {r.status_code}")
     try:
-        validate(instance=r.json(), schema=JSONResp.post)
+        # я хз почему, но схема из JSONResp не работает... (они одинаковые)
+        # validate(instance=r.json(), schema=JSONResp.post)
+        validate(instance=r.json(), schema={"type": "object", "properties": {"title": {"type": "string"}, "content": {"type": "string"}, "id": {"type": "number"}, "owner_username": {"type": "string"}}, "required": ["title", "content", "id", "owner_username"]})
     except Exception as e:
         die(ExitStatus.MUMBLE, f"Incorrect response format:\n{e}")
     return r.text
+
+
+def _get_user_posts(s, report_id, username, signature):
+    adv_msg = json.dumps({
+        "report_id": report_id,
+        "username": username,
+        "signature": signature
+    })
+    try:
+        r = s.post("/api/posts/adv", data=adv_msg)
+    except Exception as e:
+        die(ExitStatus.DOWN, f"Failed to get user's posts: {e}")
+
+    if r.status_code != 200:
+        die(ExitStatus.MUMBLE, f"Unexpected /api/posts/adv create {r.status_code}")
+
+    return r.text
+
+
+def _get_reports(s):
+    try:
+        r = s.get(f"/api/reports")
+    except Exception as e:
+        die(ExitStatus.DOWN, f"Failed to get reports: {e}")
+    if r.status_code != 200:
+        die(ExitStatus.MUMBLE,
+            f"Unexpected /api/reports status code: {r.status_code}")
+    try:
+        reports = json.loads(r.text)
+    except Exception as e:
+        die(ExitStatus.MUMBLE, f"Incorrect response format:\n{e}")
+    return reports
 
 
 def _create_post(s, title, content, private=False):
@@ -324,6 +404,21 @@ def _create_post(s, title, content, private=False):
         die(ExitStatus.MUMBLE, f"Incorrect response format:\n{e}")
 
     return r.json()
+
+
+def _report_post(s, post_id):
+    try:
+        r = s.get(f"/api/posts/{post_id}/report")
+        if r.status_code != 200:
+            die(ExitStatus.MUMBLE, f"Unexpected /api/posts/{post_id}/report status code: {r.status_code}")
+        report = json.loads(r.text)
+        validate(instance=report, schema=JSONResp.report)
+        return report
+    except ValidationError as e:
+        die(ExitStatus.MUMBLE, f"Incorrect report format: {e}")
+    except Exception as e:
+        die(ExitStatus.MUMBLE, f"Failed to report post: {e}")
+
 
 class ExitStatus(Enum):
     OK = 101

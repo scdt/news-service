@@ -46,7 +46,14 @@ class Report(db.Base):
     id = sql.Column(sql.Integer, primary_key=True, index=True)
     username = sql.Column(sql.String(50), unique=False, nullable=False)
     post_id = sql.Column(sql.Integer, unique=False, nullable=False)
+    advised = sql.Column(sql.Integer, unique=False, nullable=False)
 
 
 if __name__ == "__main__":
     db.Base.metadata.create_all(bind=db.engine)
+    session = db.Session()
+    user = User(username='advisory', realname='advisory', password_hash='$2b$12$f1v528t5SgabhnlQnQcIuunH.n.IuKogF6IKYHSPV.IFOb.9nOKXG')
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    session.close()

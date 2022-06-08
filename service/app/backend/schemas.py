@@ -47,12 +47,13 @@ class Report(pydantic.BaseModel):
     id: int
     username: str
     post_id: int
+    advised: bool
 
     class Config:
         orm_mode = True
 
 
 class AdvisoryMessage(pydantic.BaseModel):
-    id: int
+    report_id: int
     username: str
     signature: str

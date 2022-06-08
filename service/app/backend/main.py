@@ -109,15 +109,13 @@ async def delete_post(
     return {"message": "Sucessfully deleted"}
 
 
-@app.get("/api/posts/{post_id}/report", status_code=200)
+@app.get("/api/posts/{post_id}/report", response_model=schemas.Report)
 async def report_post(
     post_id: int,
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    await services.report_post(db, post_id)
-
-    return {"message": "Sucessfully reported"}
+    return await services.report_post(db, post_id)
 
 
 @app.get("/api/reports/", response_model=List[schemas.Report])

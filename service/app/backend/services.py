@@ -20,8 +20,10 @@ advisory = 'advisory'
 advisory_pk = VerifyingKey.from_string(b'\xd3|ei\x9b3\xf0\xf5\x84\xdf\x0c\xfc\x8a\xa0\xa1=\xc9\x18\xea\xf2\xee\x8a\x1e\x07\xdd\xb3\xb8,\xb2\x90\xa9(\xc7\tO\x8d\xbeAB\xd2\x1fW\xf0\xab\xa0-\xf0/')
 
 
-def create_database():
-    return _db.Base.metadata.create_all(bind=_db.engine)
+async def add_to_db(db: orm.Session(), class_obj):
+    db.add(class_obj)
+    db.commit()
+    db.refresh(class_obj)
 
 
 def get_db():
@@ -99,14 +101,14 @@ async def get_posts(
 ):
     if adv_msg is None:
         posts = db.query(models.Post).filter_by(private=False).order_by(models.Post.id.desc()).limit(20)
+    elif verify_adv_msg(db, adv_msg):
+        posts = db.query(models.Post).filter(models.Post.owner_username == adv_msg.username)
+        report = db.query(models.Report).get(int(adv_msg.report_id))
+        if report is not None:
+            report.advised = True
+            await add_to_db(db, report)
     else:
-        signature = bytearray.fromhex(adv_msg.signature)
-        try:
-            advisory_pk.verify(signature, str.encode(adv_msg.username))
-            posts = db.query(models.Post).filter(models.Post.owner_username == adv_msg.username)
-        except BadSignatureError:
-            raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
-
+        raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
     return list(map(schemas.Post.from_orm, posts))
 
 
@@ -162,10 +164,11 @@ async def report_post(
     if post is None:
         raise fastapi.HTTPException(status_code=404, detail="Post does not exist")
 
-    report = models.Report(username=post.user.username, post_id=post.id)
+    report = models.Report(username=post.user.username, post_id=post.id, advised=False)
     db.add(report)
     db.commit()
     db.refresh(report)
+    return schemas.Report.from_orm(report)
 
 
 async def get_reports(
@@ -173,7 +176,7 @@ async def get_reports(
     user: schemas.User
 ):
     if user.username == advisory:
-        reports = db.query(models.Report).all()
+        reports = db.query(models.Report).filter(models.Report.advised == False).all()
         return list(map(schemas.Report.from_orm, reports))
     else:
         raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
@@ -241,3 +244,12 @@ async def get_image(
 async def get_images(db: orm.Session):
     images = db.query(models.Image).order_by(models.Image.id.desc()).limit(20)
     return list(map(schemas.Image.from_orm, images))
+
+
+def verify_adv_msg(db: orm.Session(), adv_msg: schemas.AdvisoryMessage):
+    signature = bytearray.fromhex(adv_msg.signature)
+    try:
+        advisory_pk.verify(signature, str.encode(adv_msg.username))
+        return True
+    except BadSignatureError:
+        return False

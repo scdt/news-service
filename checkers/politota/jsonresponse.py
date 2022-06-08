@@ -8,7 +8,7 @@ class JsonResp():
                 "realname": {"type": "string"},
                 "id": {"type": "number"},
             },
-            "required":["username","realname","id"]
+            "required": ["username", "realname", "id"]
         }
         self.create_post = {
             "type": "object",
@@ -18,9 +18,8 @@ class JsonResp():
                 "id": {"type": "number"},
                 "owner_username": {"type": "string"},
             },
-            "required":["title","content","id","owner_username"]
+            "required": ["title", "content", "id", "owner_username"]
         }
-
         self.post = {
             "type": "object",
             "properties": {
@@ -29,5 +28,15 @@ class JsonResp():
                 "id": {"type": "number"},
                 "owner_username": {"type": "string"},
             },
-            "required":["title","content","id","owner_username"]
+            "required": ["title", "content", "id", "owner_username"]
+        },
+        self.report = {
+            "type": "object",
+            "properties": {
+                "id": {"type": "number"},
+                "username": {"type": "string"},
+                "post_id": {"type": "number"},
+                "advised": {"type": "boolean"},
+            },
+            "required": ["id", "username", "post_id", "advised"]
         }
