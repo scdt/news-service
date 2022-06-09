@@ -28,51 +28,52 @@ const UploadImage = ({ updateImagesHandle }) => {
             body: formData
         };
 
-        console.log(requestOption);
-
         const response = await fetch("/api/images/", requestOption);
-        console.log(response.text);
+        const data = await response.json();
 
         if (!response.ok) {
-            setErrorMsg("Something went wrong");
+            setErrorMsg(data.detail);
         } else {
             updateImagesHandle();
         }
     }
 
     return (
-        <div className="columns">
-            <div className="column">
-                <div className="file is-info">
-                    <label className="file-label">
-                        <input
-                            className="file-input"
-                            type="file"
-                            placeholder="Выбрать файл"
-                            name="image"
-                            accept=".jpg"
-                            onChange={fileChangeHandler}
-                        />
-                        <span class="file-cta">
-                            <span class="file-icon">
-                                <i class="fas fa-upload"></i>
+        <>
+            <ErrorMessage message={errorMsg} />
+            <div className="columns">
+                <div className="column">
+                    <div className="file is-info">
+                        <label className="file-label">
+                            <input
+                                className="file-input"
+                                type="file"
+                                placeholder="Выбрать файл"
+                                name="image"
+                                accept=".jpg"
+                                onChange={fileChangeHandler}
+                            />
+                            <span class="file-cta">
+                                <span class="file-icon">
+                                    <i class="fas fa-upload"></i>
+                                </span>
+                                <span class="file-label">
+                                    {selectedImage ? (
+                                        selectedImage.name
+                                    ) : (
+                                        "Выберите мэмчик"
+                                    )}
+                                </span>
                             </span>
-                            <span class="file-label">
-                                {selectedImage ? (
-                                    selectedImage.name
-                                ) : (
-                                    "Выберите мэмчик"
-                                )}
-                            </span>
-                        </span>
-                    </label>
+                        </label>
+                    </div>
+                </div>
+                <div className="column is-11">
+                    <button className="button is-primary is-1" onClick={uploadImage}>Загрузить</button>
                 </div>
             </div>
-            <div className="column is-11">
-                <button className="button is-primary is-1" onClick={uploadImage}>Загрузить</button>
-            </div>
-            <ErrorMessage message={errorMsg} />
-        </div>
+        </>
+
     )
 }
 

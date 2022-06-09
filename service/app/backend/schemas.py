@@ -15,7 +15,8 @@ class PostCreate(_PostBase):
 class Post(_PostBase):
     id: int
     owner_username: str
-
+    likes: int
+    cringe: int
     class Config:
         orm_mode = True
 
@@ -37,7 +38,11 @@ class User(_UserBase):
 
 
 class Image(pydantic.BaseModel):
+    id: int
     url: str
+    owner: str
+    likes: int
+    cringe: int
 
     class Config:
         orm_mode = True
