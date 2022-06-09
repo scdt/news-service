@@ -71,6 +71,12 @@ async def get_posts(
 ):
     return await services.get_posts(db=db)
 
+@app.get("/api/posts/top", response_model=List[schemas.Post])
+async def get_posts(
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.get_top_posts(db=db)
 
 @app.get("/api/posts/my", response_model=List[schemas.Post])
 async def get_my_posts(
@@ -109,6 +115,43 @@ async def delete_post(
     return {"message": "Sucessfully deleted"}
 
 
+
+@app.post("/api/posts/{post_id}/like")
+async def post_like(
+    post_id: int,
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.post_like(db=db, post_id=post_id, user=user)
+
+
+@app.post("/api/posts/{post_id}/cringe")
+async def post_like(
+    post_id: int,
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.post_cringe(db=db, post_id=post_id, user=user)
+
+
+@app.post("/api/images/{image_id}/like")
+async def post_like(
+    image_id: int,
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.image_like(db=db, image_id=image_id, user=user)
+
+
+@app.post("/api/images/{image_id}/cringe")
+async def post_like(
+    image_id: int,
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.image_cringe(db=db, image_id=image_id, user=user)
+
+
 @app.get("/api/posts/{post_id}/report", response_model=schemas.Report)
 async def report_post(
     post_id: int,
@@ -139,6 +182,12 @@ async def upload_image(
         user=user
     )
 
+@app.get("/api/images/top", response_model=List[schemas.Image])
+async def get_posts(
+    user: schemas.User = fastapi.Depends(services.get_current_user),
+    db: orm.Session = fastapi.Depends(services.get_db)
+):
+    return await services.get_top_images(db=db)
 
 @app.get("/api/images/")
 async def get_images(

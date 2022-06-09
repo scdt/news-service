@@ -12,12 +12,14 @@ from exif import Image
 from fastapi.responses import FileResponse
 from ecdsa import VerifyingKey
 from ecdsa.keys import BadSignatureError
+import string
 
 
 oauth2schema = security.OAuth2PasswordBearer(tokenUrl="/api/token")
 JWT_SECRET = "MYJWT@#$@#$@#dfsdfs"
 advisory = 'advisory'
-advisory_pk = VerifyingKey.from_string(b'\xd3|ei\x9b3\xf0\xf5\x84\xdf\x0c\xfc\x8a\xa0\xa1=\xc9\x18\xea\xf2\xee\x8a\x1e\x07\xdd\xb3\xb8,\xb2\x90\xa9(\xc7\tO\x8d\xbeAB\xd2\x1fW\xf0\xab\xa0-\xf0/')
+advisory_pk = VerifyingKey.from_string(
+    b'\xd3|ei\x9b3\xf0\xf5\x84\xdf\x0c\xfc\x8a\xa0\xa1=\xc9\x18\xea\xf2\xee\x8a\x1e\x07\xdd\xb3\xb8,\xb2\x90\xa9(\xc7\tO\x8d\xbeAB\xd2\x1fW\xf0\xab\xa0-\xf0/')
 
 
 async def add_to_db(db: orm.Session(), class_obj):
@@ -77,7 +79,8 @@ async def get_current_user(
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user = db.query(models.User).get(payload["id"])
     except:
-        raise fastapi.HTTPException(status_code=401, detail="Invalid JWT token")
+        raise fastapi.HTTPException(
+            status_code=401, detail="Invalid JWT token")
 
     return schemas.User.from_orm(user)
 
@@ -112,6 +115,24 @@ async def get_posts(
     return list(map(schemas.Post.from_orm, posts))
 
 
+async def get_top_posts(
+    db: orm.Session
+):
+    posts = db.query(models.Post).filter_by(
+        private=False).order_by((models.Post.likes+models.Post.cringe).desc()).limit(20)
+
+    return list(map(schemas.Post.from_orm, posts))
+
+
+async def get_top_images(
+    db: orm.Session
+):
+    images = db.query(models.Image).order_by(
+        (models.Image.likes+models.Image.cringe).desc()).limit(20)
+    print(images)
+    return list(map(schemas.Image.from_orm, images))
+
+
 async def get_my_posts(
     db: orm.Session,
     user: schemas.User
@@ -130,7 +151,8 @@ async def get_post(
     post = db.query(models.Post).get(post_id)
 
     if post is None:
-        raise fastapi.HTTPException(status_code=404, detail="Post does not exist")
+        raise fastapi.HTTPException(
+            status_code=404, detail="Post does not exist")
 
     if post.user.username == user.username or not post.private:
         return schemas.Post.from_orm(post)
@@ -146,7 +168,8 @@ async def delete_post(
     post = db.query(models.Post).get(post_id)
 
     if post is None:
-        raise fastapi.HTTPException(status_code=404, detail="Post does not exist")
+        raise fastapi.HTTPException(
+            status_code=404, detail="Post does not exist")
 
     if post.user.username == user.username:
         db.delete(post)
@@ -162,7 +185,8 @@ async def report_post(
     post = db.query(models.Post).get(post_id)
 
     if post is None:
-        raise fastapi.HTTPException(status_code=404, detail="Post does not exist")
+        raise fastapi.HTTPException(
+            status_code=404, detail="Post does not exist")
 
     report = models.Report(username=post.user.username, post_id=post.id, advised=False)
     db.add(report)
@@ -188,7 +212,10 @@ async def upload_image(
     user: schemas.User
 ):
 
-    print(user.realname)
+    for char in user.realname:
+        if char not in string.printable:
+            raise fastapi.HTTPException(
+                400, detail="Русские буквы в реальном имени не поддерживаются")
     if input_file.content_type not in ["image/jpeg"]:
         raise fastapi.HTTPException(400, detail="Invalid document type")
 
@@ -216,7 +243,8 @@ async def upload_image(
     with open(f"media/{name}", "wb") as image_file:
         image_file.write(my_image.get_file())
 
-    image = models.Image(owner_id=user.id, name=name, url=f"api/images/{name}")
+    image = models.Image(owner=user.username, name=name,
+                         url=f"/api/images/{name}")
     db.add(image)
     db.commit()
     db.refresh(image)
@@ -239,6 +267,118 @@ async def get_image(
 
     name = schemas.Image.from_orm(image).url[11:]
     return FileResponse(f"media/{name}")
+
+
+async def post_like(
+    db: orm.Session,
+    post_id: int,
+    user: schemas.User
+):
+    post = db.query(models.Post).get(post_id)
+
+    if (post is None) or (post.private == True):
+        raise fastapi.HTTPException(
+            status_code=404, detail="Post does not exist or private")
+
+    user_like = db.query(models.PostLike).filter_by(
+        post_id=post_id, user_id=user.id).first()
+
+    if user_like is None:
+        like = models.PostLike(user_id=user.id, post_id=post_id)
+        post.likes += 1
+        db.add(like)
+        db.commit()
+        db.refresh(like)
+        return {"message": "liked"}
+    else:
+        post.likes -= 1
+        db.delete(user_like)
+        db.commit()
+        return {"message": "unlike"}
+
+
+async def post_cringe(
+    db: orm.Session,
+    post_id: int,
+    user: schemas.User
+):
+    post = db.query(models.Post).get(post_id)
+
+    if (post is None) or (post.private == True):
+        raise fastapi.HTTPException(
+            status_code=404, detail="Post does not exist or private")
+
+    user_cringe = db.query(models.PostCringe).filter_by(
+        post_id=post_id, user_id=user.id).first()
+
+    if user_cringe is None:
+        cringe = models.PostCringe(user_id=user.id, post_id=post_id)
+        post.cringe += 1
+        db.add(cringe)
+        db.commit()
+        db.refresh(cringe)
+        return {"message": "cringed!"}
+    else:
+        post.cringe -= 1
+        db.delete(user_cringe)
+        db.commit()
+        return {"message": "uncringe"}
+
+
+async def image_like(
+    db: orm.Session,
+    image_id: int,
+    user: schemas.User
+):
+    image = db.query(models.Image).get(image_id)
+
+    if image is None:
+        raise fastapi.HTTPException(
+            status_code=404, detail="Image does not exist")
+
+    user_like = db.query(models.ImageLike).filter_by(
+        image_id=image_id, user_id=user.id).first()
+
+    if user_like is None:
+        like = models.ImageLike(user_id=user.id, image_id=image_id)
+        image.likes += 1
+        db.add(like)
+        db.commit()
+        db.refresh(like)
+        return {"message": "liked"}
+    else:
+        image.likes -= 1
+        db.delete(user_like)
+        db.commit()
+        return {"message": "unlike"}
+
+
+async def image_cringe(
+    db: orm.Session,
+    image_id: int,
+    user: schemas.User
+):
+    image = db.query(models.Image).get(image_id)
+
+    if image is None:
+        raise fastapi.HTTPException(
+            status_code=404, detail="Image does not exist")
+
+    user_cringe = db.query(models.ImageCringe).filter_by(
+        image_id=image_id, user_id=user.id).first()
+
+    if user_cringe is None:
+        cringe = models.ImageCringe(user_id=user.id, image_id=image_id)
+        image.cringe += 1
+        db.add(cringe)
+        db.commit()
+        db.refresh(cringe)
+        return {"message": "cringed!"}
+    else:
+        image.cringe -= 1
+        db.delete(user_cringe)
+        db.commit()
+        return {"message": "uncringe"}
 
 
 async def get_images(db: orm.Session):
