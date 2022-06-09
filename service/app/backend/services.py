@@ -103,9 +103,11 @@ async def get_posts(
     adv_msg: schemas.AdvisoryMessage = None
 ):
     if adv_msg is None:
-        posts = db.query(models.Post).filter_by(private=False).order_by(models.Post.id.desc()).limit(20)
+        posts = db.query(models.Post).filter_by(
+            private=False).order_by(models.Post.id.desc()).limit(20)
     elif verify_adv_msg(db, adv_msg):
-        posts = db.query(models.Post).filter(models.Post.owner_username == adv_msg.username)
+        posts = db.query(models.Post).filter(
+            models.Post.owner_username == adv_msg.username)
         report = db.query(models.Report).get(int(adv_msg.report_id))
         if report is not None:
             report.advised = True
@@ -129,7 +131,7 @@ async def get_top_images(
 ):
     images = db.query(models.Image).order_by(
         (models.Image.likes+models.Image.cringe).desc()).limit(20)
-    print(images)
+
     return list(map(schemas.Image.from_orm, images))
 
 
@@ -188,7 +190,8 @@ async def report_post(
         raise fastapi.HTTPException(
             status_code=404, detail="Post does not exist")
 
-    report = models.Report(username=post.user.username, post_id=post.id, advised=False)
+    report = models.Report(username=post.user.username,
+                           post_id=post.id, advised=False)
     db.add(report)
     db.commit()
     db.refresh(report)
@@ -200,7 +203,8 @@ async def get_reports(
     user: schemas.User
 ):
     if user.username == advisory:
-        reports = db.query(models.Report).filter(models.Report.advised == False).all()
+        reports = db.query(models.Report).filter(
+            models.Report.advised == False).all()
         return list(map(schemas.Report.from_orm, reports))
     else:
         raise fastapi.HTTPException(status_code=401, detail="Unauthorized")
@@ -215,7 +219,13 @@ async def upload_image(
     for char in user.realname:
         if char not in string.printable:
             raise fastapi.HTTPException(
-                400, detail="Русские буквы в реальном имени не поддерживаются")
+                400, detail="Russian letters in the real user name are not supported")
+
+    for char in user.username:
+        if char not in string.printable:
+            raise fastapi.HTTPException(
+                400, detail="Russian letters in the username are not supported")
+
     if input_file.content_type not in ["image/jpeg"]:
         raise fastapi.HTTPException(400, detail="Invalid document type")
 

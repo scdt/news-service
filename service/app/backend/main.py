@@ -116,7 +116,7 @@ async def delete_post(
 
 
 
-@app.post("/api/posts/{post_id}/like")
+@app.get("/api/posts/{post_id}/like")
 async def post_like(
     post_id: int,
     user: schemas.User = fastapi.Depends(services.get_current_user),
@@ -125,7 +125,7 @@ async def post_like(
     return await services.post_like(db=db, post_id=post_id, user=user)
 
 
-@app.post("/api/posts/{post_id}/cringe")
+@app.get("/api/posts/{post_id}/cringe")
 async def post_like(
     post_id: int,
     user: schemas.User = fastapi.Depends(services.get_current_user),
@@ -134,7 +134,7 @@ async def post_like(
     return await services.post_cringe(db=db, post_id=post_id, user=user)
 
 
-@app.post("/api/images/{image_id}/like")
+@app.get("/api/images/{image_id}/like")
 async def post_like(
     image_id: int,
     user: schemas.User = fastapi.Depends(services.get_current_user),
@@ -143,7 +143,7 @@ async def post_like(
     return await services.image_like(db=db, image_id=image_id, user=user)
 
 
-@app.post("/api/images/{image_id}/cringe")
+@app.get("/api/images/{image_id}/cringe")
 async def post_like(
     image_id: int,
     user: schemas.User = fastapi.Depends(services.get_current_user),

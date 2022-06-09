@@ -29,7 +29,7 @@ class JsonResp():
                 "owner_username": {"type": "string"},
             },
             "required": ["title", "content", "id", "owner_username"]
-        },
+        }
         self.report = {
             "type": "object",
             "properties": {

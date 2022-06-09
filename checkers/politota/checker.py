@@ -15,7 +15,6 @@ from PIL import Image, ImageDraw, ImageFont
 from exif import Image as ExifImg
 from ecdsa import SigningKey, VerifyingKey
 
-random = random.SystemRandom()
 """ <config> """
 # SERVICE INFO
 PORT = 8000
@@ -92,11 +91,6 @@ def check(host: str):
     realname = rand_string()
     token = _register(s, username, realname, password)
     user = _login(s, token)
-
-    '''try:
-        user["realname"]
-    except Exception as e:
-        die(ExitStatus.MUMBLE, f"realname not found in response")'''
 
     s.headers = {"Authorization": f"Bearer {token}"}
 
@@ -206,9 +200,6 @@ def _check_posts(s):
 
     return id_pub
 
-# https://stackoverflow.com/a/46220683/9263761
-
-
 def _check_images(s, username):
     img = random.choice(IMAGES)
     text = random.choice(TITLES)
@@ -274,7 +265,7 @@ def _create_image(img, text):
 
 
 def _check_download(s, url, username):
-    r = s.get(f"/{url}", allow_redirects=True)
+    r = s.get(f"{url}", allow_redirects=True)
 
     if r.status_code != 200:
         die(ExitStatus.MUMBLE,
@@ -343,9 +334,7 @@ def _get_post(s, post_id):
         die(ExitStatus.MUMBLE,
             f"Unexpected /api/posts/{post_id} status code: {r.status_code}")
     try:
-        # я хз почему, но схема из JSONResp не работает... (они одинаковые)
-        # validate(instance=r.json(), schema=JSONResp.post)
-        validate(instance=r.json(), schema={"type": "object", "properties": {"title": {"type": "string"}, "content": {"type": "string"}, "id": {"type": "number"}, "owner_username": {"type": "string"}}, "required": ["title", "content", "id", "owner_username"]})
+        validate(instance=r.json(), schema=JSONResp.post)
     except Exception as e:
         die(ExitStatus.MUMBLE, f"Incorrect response format:\n{e}")
     return r.text

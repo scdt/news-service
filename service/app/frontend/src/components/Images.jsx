@@ -57,7 +57,7 @@ const Images = () => {
 
     const imageLike = async (image_id) => {
         const requestOption = {
-            method: "POST",
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Bearer " + token
@@ -69,12 +69,17 @@ const Images = () => {
         if (!response.ok) {
             setErrorMsg("Something went wrong");
         }
-        getImages();
+        
+        if (newImages === "is-active") {
+            getImages();
+        } else {
+            getTopImages();
+        }
     }
 
     const imageCringe = async (image_id) => {
         const requestOption = {
-            method: "POST",
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Bearer " + token
@@ -86,7 +91,12 @@ const Images = () => {
         if (!response.ok) {
             setErrorMsg("Something went wrong");
         }
-        getImages();
+        
+        if (newImages === "is-active") {
+            getImages();
+        } else {
+            getTopImages();
+        }
     }
 
     useEffect(() => {

@@ -11,6 +11,11 @@ const Posts = () => {
     const [activeCreatePost, setActiveCreatePost] = useState(false);
     const [newPosts, setNewPosts] = useState("is-active");
     const [topPosts, setTopPosts] = useState("");
+    const [sendReport, setSendReport] = useState("");
+
+    function sleep(time) {
+        return new Promise((resolve) => setTimeout(resolve, time))
+    }
 
     const getPosts = async () => {
         setTopPosts("");
@@ -52,13 +57,12 @@ const Posts = () => {
         } else {
             const data = await response.json();
             setPosts(data);
-            setLoaded(true);
         }
     };
 
     const postLike = async (post_id) => {
         const requestOption = {
-            method: "POST",
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Bearer " + token
@@ -70,12 +74,37 @@ const Posts = () => {
         if (!response.ok) {
             setErrorMsg("Something went wrong");
         }
-        getPosts();
+
+        if (newPosts === "is-active") {
+            getPosts();
+        } else {
+            getTopPosts();
+        }
+    }
+
+    const postReport = async (post_id) => {
+        const requestOption = {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token
+            }
+        }
+
+        const response = await fetch(`/api/posts/${post_id}/report`, requestOption);
+
+        if (!response.ok) {
+            setErrorMsg("Something went wrong");
+        } else {
+            setSendReport("отправлено");
+            await sleep(1000);
+            setSendReport("");
+        }
     }
 
     const postCringe = async (post_id) => {
         const requestOption = {
-            method: "POST",
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: "Bearer " + token
@@ -87,7 +116,12 @@ const Posts = () => {
         if (!response.ok) {
             setErrorMsg("Something went wrong");
         }
-        getPosts();
+
+        if (newPosts === "is-active") {
+            getPosts();
+        } else {
+            getTopPosts();
+        }
     }
 
     const handleModal = () => {
@@ -112,7 +146,6 @@ const Posts = () => {
                 Написать мнение
             </button>
             <br />
-            <br />
             <ErrorMessage message={errorMsg} />
             <div className="tabs">
                 <ul>
@@ -120,17 +153,21 @@ const Posts = () => {
                     <li className={topPosts}><a href onClick={() => getTopPosts()}>Топ</a></li>
                 </ul>
             </div>
+            <h2 className="has-text-danger-dark">{sendReport}</h2>
             {loaded && posts ? (
                 <p>
                     {
                         posts.map((post) => (
+
                             <article className="media">
+
                                 <div className="media-content">
                                     <div className="content">
                                         <p>
                                             <strong>{post.title}</strong>
                                             <small> @{post.owner_username} </small>
-                                            <button className="button is-small is-danger is-light">
+                                            <button className="button is-small is-danger is-light"
+                                                onClick={() => postReport(post.id)}>
                                                 настучать
                                             </button>
                                             <br />
