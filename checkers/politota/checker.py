@@ -13,7 +13,7 @@ from jsonschema.exceptions import ValidationError
 from jsonresponse import JsonResp
 from PIL import Image, ImageDraw, ImageFont
 from exif import Image as ExifImg
-from ecdsa import SigningKey, VerifyingKey
+from ecdsa import SigningKey
 
 """ <config> """
 # SERVICE INFO
@@ -199,6 +199,7 @@ def _check_posts(s):
         die(ExitStatus.MUMBLE, "failed to check public post")
 
     return id_pub
+
 
 def _check_images(s, username):
     img = random.choice(IMAGES)
