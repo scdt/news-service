@@ -17,7 +17,7 @@ from ecdsa import SigningKey
 
 """ <config> """
 # SERVICE INFO
-PORT = 8000
+PORT = 8080
 
 advisory_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkdmlzb3J5IiwicmVhbG5hbWUiOiJhZHZpc29yeSIsImlkIjoxfQ.9g5FzrbUaewzDmOtBKJkDVwyE9jemUucjjHLUJ4iITg"
 advisory_pk = SigningKey.from_string(b'\xb5\x1bp\x02i4\xcaz\xa7e\x10\xcd\x9c1x\x8c<\x88\x89v\xeb\xeb\xce\x8c')
