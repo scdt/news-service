@@ -24,9 +24,8 @@ BASE_DIR = Path(__file__).resolve().absolute().parent
 SERVICES_PATH = BASE_DIR / 'service'
 CHECKERS_PATH = BASE_DIR / 'checkers'
 MAX_THREADS = int(os.getenv('MAX_THREADS', default=2 * os.cpu_count()))
-RUNS = int(os.getenv('RUNS', default=10))
+RUNS = int(os.getenv('RUNS', default=150))
 HOST = os.getenv('HOST', default='127.0.0.1')
-print(f"!!! HOST: {HOST}")
 OUT_LOCK = Lock()
 DISABLE_LOG = False
 
@@ -399,13 +398,10 @@ class StructureValidator(BaseValidator):
 
 
 def get_services() -> List[Service]:
-    if os.getenv('SERVICE') == 'all':
-        result = list(
-            Service(service_path.name) for service_path in SERVICES_PATH.iterdir()
-            if service_path.name[0] != '.' and service_path.is_dir()
-        )
-    else:
-        result = [Service(os.environ['SERVICE'])]
+    result = list(
+        Service(service_path.name) for service_path in SERVICES_PATH.iterdir()
+        if service_path.name[0] != '.' and service_path.is_dir()
+    )
 
     with OUT_LOCK:
         colored_log('Got services:', ', '.join(map(str, result)))
