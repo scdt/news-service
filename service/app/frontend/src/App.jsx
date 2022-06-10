@@ -15,7 +15,7 @@ const App = () => {
         "Content-Type": "application/json",
       },
     };
-    const response = await fetch("/api", requestOption);
+    const response = await fetch("/api/", requestOption);
     const data = await response.json();
 
     if (!response.ok) {

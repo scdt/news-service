@@ -1,7 +1,6 @@
-from email.policy import default
+#!/usr/bin/env python
 import sqlalchemy as sql
 import sqlalchemy.orm as orm
-from sqlalchemy.ext.hybrid import hybrid_property
 import passlib.hash as hash
 import database as db
 

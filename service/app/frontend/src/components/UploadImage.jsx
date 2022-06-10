@@ -1,6 +1,9 @@
 import React, { useState, useContext } from "react";
 import { UserContext } from "../context/UserContext";
 import ErrorMessage from "./ErrorMessage";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faUpload} from "@fortawesome/free-solid-svg-icons";
+
 const UploadImage = ({ updateImagesHandle }) => {
     const [token] = useContext(UserContext);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -55,7 +58,7 @@ const UploadImage = ({ updateImagesHandle }) => {
                             />
                             <span class="file-cta">
                                 <span class="file-icon">
-                                    <i class="fas fa-upload"></i>
+                                <FontAwesomeIcon icon={faUpload} />
                                 </span>
                                 <span class="file-label">
                                     {selectedImage ? (
