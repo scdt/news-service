@@ -10,7 +10,7 @@ from typing import List
 app = fastapi.FastAPI()
 
 origins = [
-    "http://localhost:3000"
+    "http://localhost:8080"
 ]
 
 app.add_middleware(
@@ -176,7 +176,6 @@ async def upload_image(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
-    print(1)
     return await services.upload_image(
         db=db,
         input_file=file,

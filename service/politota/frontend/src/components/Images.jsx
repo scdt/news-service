@@ -22,7 +22,7 @@ const Images = () => {
             }
         }
 
-        const response = await fetch("/api/images/", requestOption);
+        const response = await fetch("/api/images", requestOption);
 
         if (!response.ok) {
             setErrorMsg("Something went wrong");

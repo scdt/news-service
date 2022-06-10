@@ -31,7 +31,7 @@ const UploadImage = ({ updateImagesHandle }) => {
             body: formData
         };
 
-        const response = await fetch("/api/images/", requestOption);
+        const response = await fetch("/api/images", requestOption);
         const data = await response.json();
 
         if (!response.ok) {
