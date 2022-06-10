@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 import sqlalchemy as sql
 import sqlalchemy.orm as orm
 import passlib.hash as hash

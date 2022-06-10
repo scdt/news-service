@@ -3,8 +3,5 @@ WORKDIR /code
 COPY ./requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
 COPY . .
-ADD init.sh .
-RUN chmod +x ./init.sh
-
-CMD ["./init.sh"]
 EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
