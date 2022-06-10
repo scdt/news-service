@@ -71,12 +71,14 @@ async def get_posts(
 ):
     return await services.get_posts(db=db)
 
+
 @app.get("/posts/top", response_model=List[schemas.Post])
 async def get_posts(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
 ):
     return await services.get_top_posts(db=db)
+
 
 @app.get("/posts/my", response_model=List[schemas.Post])
 async def get_my_posts(
@@ -113,7 +115,6 @@ async def delete_post(
     await services.delete_post(db, post_id, user)
 
     return {"message": "Sucessfully deleted"}
-
 
 
 @app.get("/posts/{post_id}/like")
@@ -161,7 +162,7 @@ async def report_post(
     return await services.report_post(db, post_id)
 
 
-@app.get("/reports/", response_model=List[schemas.Report])
+@app.get("/reports", response_model=List[schemas.Report])
 async def get_reports(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)
@@ -169,7 +170,7 @@ async def get_reports(
     return await services.get_reports(db, user)
 
 
-@app.post("/images/", response_model=schemas.Image)
+@app.post("/images", response_model=schemas.Image)
 async def upload_image(
     file: fastapi.UploadFile,
     user: schemas.User = fastapi.Depends(services.get_current_user),
@@ -182,6 +183,7 @@ async def upload_image(
         user=user
     )
 
+
 @app.get("/images/top", response_model=List[schemas.Image])
 async def get_posts(
     user: schemas.User = fastapi.Depends(services.get_current_user),
@@ -189,7 +191,8 @@ async def get_posts(
 ):
     return await services.get_top_images(db=db)
 
-@app.get("/images/")
+
+@app.get("/images")
 async def get_images(
     user: schemas.User = fastapi.Depends(services.get_current_user),
     db: orm.Session = fastapi.Depends(services.get_db)

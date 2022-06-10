@@ -126,7 +126,7 @@ def put(host: str, flag_id: str, flag: str, vuln: str):
         title = random.choice(TITLES)
         r = _create_post(s, title, flag, True)
         private_post_id = r["id"]
-        print(f"{token}@@{post_id}@@{private_post_id}", file=sys.stdout, flush=True)
+        print(f"{token};{post_id};{private_post_id}", file=sys.stdout, flush=True)
 
     elif vuln == "2":
         img = random.choice(IMAGES)
@@ -149,7 +149,7 @@ def get(host: str, flag_id: str, flag: str, vuln: str):
     s = FakeSession(host, PORT)
 
     if vuln == "1":
-        data = flag_id.split("@@")
+        data = flag_id.split(";")
         token = data[0]
         post_id = data[1]
         private_post_id = data[2]
@@ -174,6 +174,8 @@ def get(host: str, flag_id: str, flag: str, vuln: str):
 
         if flag not in me["realname"]:
             die(ExitStatus.CORRUPT, f"Can't find a flag in {me}")
+
+    die(ExitStatus.OK, "get end")
 
 
 def _check_posts(s):
@@ -289,38 +291,38 @@ def _upload_image(s, name):
     file = {
         'file': (name, open(name, "rb"), 'image/jpeg')
     }
-    r = s.post('/api/images/', files=file)
+    r = s.post('/api/images', files=file)
     os.remove(name)
 
     if r.status_code != 200:
         die(ExitStatus.MUMBLE,
-            f"Unexpected /api/images/ status code: {r.status_code}")
+            f"Unexpected /api/images status code: {r.status_code}")
 
     return r.json()["url"]
 
 
 def _get_posts(s):
     try:
-        r = s.get(f"/api/posts/")
+        r = s.get(f"/api/posts")
     except Exception as e:
         die(ExitStatus.DOWN, f"Failed to get post: {e}")
 
     if r.status_code != 200:
         die(ExitStatus.MUMBLE,
-            f"Unexpected /api/posts/ status code: {r.status_code}")
+            f"Unexpected /api/posts status code: {r.status_code}")
 
     return r.text
 
 
 def _get_images(s):
     try:
-        r = s.get(f"/api/images/")
+        r = s.get(f"/api/images")
     except Exception as e:
-        die(ExitStatus.DOWN, f"Failed to get post: {e}")
+        die(ExitStatus.DOWN, f"Failed to get images: {e}")
 
     if r.status_code != 200:
         die(ExitStatus.MUMBLE,
-            f"Unexpected /api/posts/ status code: {r.status_code}")
+            f"Unexpected /api/images status code: {r.status_code}")
 
     return r.text
 
@@ -333,7 +335,7 @@ def _get_post(s, post_id):
         die(ExitStatus.DOWN, f"Failed to get post: {e}")
     if r.status_code != 200:
         die(ExitStatus.MUMBLE,
-            f"Unexpected /api/posts/{post_id} status code: {r.status_code}")
+            f"Unexpected /api/posts{post_id} status code: {r.status_code}")
     try:
         validate(instance=r.json(), schema=JSONResp.post)
     except Exception as e:
