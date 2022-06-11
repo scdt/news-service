@@ -37,7 +37,7 @@ JSONResp = JsonResp()
 
 
 def info():
-    print('vulns: 1:1', flush=True, end="")
+    print('vulns: 1:2', flush=True, end="")
     exit(101)
 
 
@@ -62,6 +62,26 @@ def _register(s, username, realname, password):
     except Exception as e:
         die(ExitStatus.MUMBLE,
             f"Failed to get token after register in service: {e}")
+
+    return token
+
+def _get_token(s, login, password):
+    #data = f"grant_type=&username={login}&password={password}&scope=&client_id=&client_secret="
+    data = {"grant_type": "", "username": {login}, "password": {password}, "scope": "", "client_id": "", "client_secret": ""}
+    try:
+        r = s.post("/api/token", data=data)
+    except Exception as e:
+        die(ExitStatus.DOWN, f"Failed to register in service: {e}")
+
+    if r.status_code != 200:
+        die(ExitStatus.MUMBLE,
+            f"Unexpected /api/token code: {r.status_code}")
+
+    try:
+        token = r.json()["access_token"]
+    except Exception as e:
+        die(ExitStatus.MUMBLE,
+            f"Failed to get token after login in service: {e}")
 
     return token
 
@@ -161,6 +181,8 @@ def get(host: str, flag_id: str, flag: str, vuln: str):
             die(ExitStatus.CORRUPT, f"Can't find a flag in {post}")
 
         _log("Check flag in private post by advisory")
+        #
+        advisory_token = _get_token(s, "advisory", "3vaMqc8v^#jso2(n")
         s.headers = {"Authorization": f"Bearer {advisory_token}"}
         report = _report_post(s, post_id)
         signature = advisory_pk.sign(str.encode(report["username"])).hex()
@@ -206,8 +228,11 @@ def _check_posts(s):
 def _check_images(s, username):
     img = random.choice(IMAGES)
     text = random.choice(TITLES)
-
-    name = _create_image(img, text)
+    
+    try:
+        name = _create_image(img, text)
+    except Exception as e:
+        die(ExitStatus.MUMBLE, f"failed to create image: {e}")
 
     _log(f"Check image upload")
     url = _upload_image(s, name)
@@ -223,6 +248,8 @@ def _check_images(s, username):
 
 
 def _check_reports(s, post_id):
+    #
+    advisory_token = _get_token(s, "advisory", "3vaMqc8v^#jso2(n")
     s.headers = {"Authorization": f"Bearer {advisory_token}"}
     _log("Check report post")
     _report_post(s, post_id)
